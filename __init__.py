@@ -1,0 +1,43 @@
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+import sys, os
+
+from filehandling import BatchProcess
+from gui.main_gui import MainWindow
+
+
+def track_gui(movie_filename=None, settings_filename=None):
+    '''
+    track_gui is a simple function that launches the main gui tracking window.
+
+    Parameters
+    ----------
+    movie: optional path to movie to process if not specified a dialogue window prompts user to navigate to file.
+    settings: optional path to .param settings config file, if not set a default config file is automatically generated using create_param_file in general.param_file_creator
+
+    Returns None
+    -------
+
+    '''
+ 
+
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+
+    app = QApplication(sys.argv)
+    if hasattr(Qt, 'AA_EnableHighDpiScaling'):
+        app.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+
+    if hasattr(Qt, 'AA_UseHighDpiPixmaps'):
+        app.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    
+    screen_size = app.primaryScreen().size()
+
+    window = MainWindow(
+        movie_filename=movie_filename,
+        settings_filename=settings_filename, screen_size=screen_size)
+    window.show()
+    #Start event loop
+    app.exec_()
+
+if __name__ == '__main__':
+    track_gui()
