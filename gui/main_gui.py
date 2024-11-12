@@ -6,9 +6,7 @@ import os
 from os.path import isfile
 from pathlib import Path
 import sys
-
 from scipy import spatial
-
 
 #Our other repos
 from qtwidgets.sliders import QCustomSlider

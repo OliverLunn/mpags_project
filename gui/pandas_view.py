@@ -1,9 +1,7 @@
 import os
-
 import pandas as pd
 from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtCore import Qt
-
 from customexceptions import *
 
 
@@ -21,15 +19,24 @@ class pandasModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if index.isValid():
-            if role == Qt.DisplayRole:
+            if role == Qt.DisplayRole or role == Qt.EditRole:
                 return str(self._data.iloc[index.row(), index.column()])
         return None
+    
+    def setData(self, index, value, role):
+        if role == Qt.EditRole:
+            self._data.iloc[index.row(),index.column()] = value
+            return True
+        return False
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self._data.columns[col]
         return None
-
+    
+    def flags(self, index):
+        return Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsEditable
+    
 class PandasWidget(QtWidgets.QDialog):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)

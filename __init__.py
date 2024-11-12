@@ -19,8 +19,6 @@ def track_gui(movie_filename=None, settings_filename=None):
     -------
 
     '''
- 
-
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 
     app = QApplication(sys.argv)
