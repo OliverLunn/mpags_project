@@ -1,15 +1,12 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import sys, os
-
 from filehandling import BatchProcess
 from gui.main_gui import MainWindow
-
 
 def track_gui(movie_filename=None, settings_filename=None):
     '''
     track_gui is a simple function that launches the main gui tracking window.
-
     Parameters
     ----------
     movie: optional path to movie to process if not specified a dialogue window prompts user to navigate to file.
@@ -17,7 +14,6 @@ def track_gui(movie_filename=None, settings_filename=None):
 
     Returns None
     -------
-
     '''
     os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
 

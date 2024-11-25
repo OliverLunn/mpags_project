@@ -7,26 +7,20 @@ from os.path import isfile
 from pathlib import Path
 import sys
 from scipy import spatial
-
 #Our other repos
 from qtwidgets.sliders import QCustomSlider
 from qtwidgets.images import QImageViewer
 from labvision.images import write_img
-
 #This project
 from gui.pandas_view import PandasWidget
-
 from .file_io import check_filenames, open_movie_dialog, open_settings_dialog, save_settings_dialog
 
-
-
-
-class MainWindow(QMainWindow):
-    
+class MainWindow(QMainWindow):    
     def __init__(self, *args, movie_filename=None, settings_filename=None, screen_size=None, **kwargs):
         super(MainWindow,self).__init__(*args, **kwargs)
         #input df name
         self.data_filename = "testdata.hdf5"
+        #output df name
         self.output_filename = "settings.hdf5"
 
         self.screen_size = screen_size       
@@ -34,15 +28,10 @@ class MainWindow(QMainWindow):
 
         self.main_panel = QWidget()
         self.main_layout = QHBoxLayout()  # Contains view and settings layout
-        
         self.setup_menus_toolbar()
-
         self.main_panel.setLayout(self.main_layout)
         self.setCentralWidget(self.main_panel)
-        
         self.setup_pandas_viewer()   
-        
-            
 
         """------------------------------------------------------------------------------
         ------------------------------------------------------------------------------
@@ -56,9 +45,6 @@ class MainWindow(QMainWindow):
     def setup_menus_toolbar(self):
         dir,_ =os.path.split(os.path.abspath(__file__))
         resources_dir = os.path.join(dir,'icons','icons')
-        #Use these lines when using pyinstaller.
-        #dir , _= os.path.split(sys.argv[0])#os.path.abspath(__file__)
-        #resources_dir = os.path.join(dir,'gui','icons','icons')
         self.toolbar = QToolBar('Toolbar')
         self.toolbar.setIconSize(QSize(16,16))
         self.addToolBar(self.toolbar)
@@ -79,9 +65,7 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(save_settings_button)
 
 
-        self.pandas_button = QAction(
-            QIcon(os.path.join(resources_dir, "view_pandas.png")),
-            "Show Dataframe View", self)
+        self.pandas_button = QAction(QIcon(os.path.join(resources_dir, "view_pandas.png")),"Show Dataframe View", self)
         self.pandas_button.triggered.connect(self.pandas_button_click)
         self.pandas_button.setCheckable(True)
         self.pandas_button.setChecked(False)
@@ -92,15 +76,12 @@ class MainWindow(QMainWindow):
         self.toolbar.addAction(close_button)
 
         menu = self.menuBar()
-       
-
         '''
         ---------------------------------------------------------------------------------------------
         File menu items
         ---------------------------------------------------------------------------------------------
         '''
         self.file_menu = menu.addMenu("&File")
-
         self.file_menu.addAction(open_movie_button)
         self.file_menu.addAction(save_settings_button)
         self.file_menu.addAction(close_button)
@@ -122,19 +103,14 @@ class MainWindow(QMainWindow):
     ------------------------------------------------------------------
     ----------------------------------------------------------------
     """
-
-     
     def open_movie_click(self):
         #open the df
         print("open movie")
-        
-        
-
+    
     def save_settings_button_click(self):
         #save the df
         print("save")
         
-
     """-------------------------------------------------------------
     Functions relevant to the tools section
     --------------------------------------------------------------"""
@@ -155,14 +131,6 @@ class MainWindow(QMainWindow):
     def update_pandas_view(self):
         fname = self.data_filename
         self.pandas_viewer.update_file(fname, 1)
-           
-
 
     def close_button_click(self):
         sys.exit()
-
-
-
-
-
-
