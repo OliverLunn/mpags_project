@@ -53,20 +53,20 @@ class PandasWidget(QtWidgets.QDialog):
         lay.addWidget(self.view)
         button_layout = QtWidgets.QHBoxLayout()
 
-        close_button = QtWidgets.QPushButton("Close", self)#close df
-        save_to_csv_button = QtWidgets.QPushButton("Save", self)#save df to csv
         add_row_button = QtWidgets.QPushButton("Add Row", self)#add row to df
         delete_row_button = QtWidgets.QPushButton("Delete Row", self)#delete row in df
+        save_to_csv_button = QtWidgets.QPushButton("Save", self)#save df to csv
+        close_button = QtWidgets.QPushButton("Close", self)#close df
         
-        button_layout.addWidget(close_button)
-        button_layout.addWidget(save_to_csv_button)
         button_layout.addWidget(add_row_button)
         button_layout.addWidget(delete_row_button)
-
-        close_button.clicked.connect(self.close_button_clicked)
-        save_to_csv_button.clicked.connect(self.save_button_clicked)
+        button_layout.addWidget(save_to_csv_button)
+        button_layout.addWidget(close_button)
+        
         add_row_button.clicked.connect(self.add_row_clicked)
         delete_row_button.clicked.connect(self.delete_row_clicked)
+        save_to_csv_button.clicked.connect(self.save_button_clicked)
+        close_button.clicked.connect(self.close_button_clicked)
 
         lay.addLayout(button_layout)
         self.setLayout(lay)
@@ -93,22 +93,30 @@ class PandasWidget(QtWidgets.QDialog):
         self.df.to_csv(name)
 
     def add_row_clicked(self):
-        print("Adding row to DataFrame.")
-        new_row = 0
-        new_item = pd.DataFrame(self.df.iloc[[new_row]])  #df to be added
-        self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")  #add to whole df
-        model = pandasModel(self.df)    #update displayed df in window
-        self.view.setModel(model)
-        self.view.selectRow(new_row)  #select added row
-        print("Row added.")
+        index = self.view.currentIndex()    #access selected cell information
+        row_idx = index.row()   #access row index
+
+        if row_idx == -1:
+            print("Select a Row")
+        else:
+            new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row posn
+            self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")  #add to whole df
+            model = pandasModel(self.df)    #update displayed df in window
+            self.view.setModel(model)
+            self.view.selectRow(row_idx)  #select added row
+            print("Row "+str(row_idx)+" added.")
 
     def delete_row_clicked(self):
-        print("Deleting selected row in Dataframe")
-        old_row = 0 #row to be deleted
-        self.df = self.df.drop(old_row) #delete row from df
-        model = pandasModel(self.df)   #update df
-        self.view.setModel(model)
-
+        index = self.view.currentIndex()    #access selected cell information from QTableWidget()
+        row_idx = index.row()   #access row index
+        if row_idx == -1:
+            print("Select a Row")
+            pass
+        else:
+            self.df = self.df.drop(row_idx) #delete row from df
+            model = pandasModel(self.df)   #update df
+            self.view.setModel(model)
+            print("Row "+str(row_idx)+" deleted.")
         
     def center(self):
         qr = self.frameGeometry()
