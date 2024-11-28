@@ -100,7 +100,7 @@ class PandasWidget(QtWidgets.QDialog):
             print("Select a Row")
         else:
             new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row posn
-            self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")  #add to whole df
+            self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle") #add to whole df
             model = pandasModel(self.df)    #update displayed df in window
             self.view.setModel(model)
             self.view.selectRow(row_idx)  #select added row
@@ -109,11 +109,14 @@ class PandasWidget(QtWidgets.QDialog):
     def delete_row_clicked(self):
         index = self.view.currentIndex()    #access selected cell information from QTableWidget()
         row_idx = index.row()   #access row index
+        print(row_idx)
         if row_idx == -1:
             print("Select a Row")
-            pass
         else:
-            self.df = self.df.drop(row_idx) #delete row from df
+            self.df = self.df.drop([row_idx]) #delete row from df
+            print(self.df.head())
+            self.df = self.df.reset_index(drop=True)#reindex df after deletion
+            print(self.df.head())
             model = pandasModel(self.df)   #update df
             self.view.setModel(model)
             print("Row "+str(row_idx)+" deleted.")
