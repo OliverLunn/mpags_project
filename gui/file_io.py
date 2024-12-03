@@ -108,12 +108,6 @@ def save_settings_dialog(self, settings_filename):
     settings_filename=settings_filename.split('.')[0] + '.param'
     return settings_filename
 
-
-"""-----------------------------------------------------------------
-File input and output
--------------------------------------------------------------------"""
-
-
           
 
 

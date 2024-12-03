@@ -30,7 +30,6 @@ class pandasModel(QtCore.QAbstractTableModel):
                 value = np.int64(0)
 
             self._data.iloc[index.row(), index.column()] = value    #set new values
-            self._data.to_hdf("temp.hdf5","data")   #save to a temporary .hdf5 file
             return True
         return False
     
@@ -53,20 +52,20 @@ class PandasWidget(QtWidgets.QDialog):
         lay.addWidget(self.view)
         button_layout = QtWidgets.QHBoxLayout()
 
-        add_row_button = QtWidgets.QPushButton("Add Row", self)#add row to df
-        delete_row_button = QtWidgets.QPushButton("Delete Row", self)#delete row in df
-        save_to_csv_button = QtWidgets.QPushButton("Save", self)#save df to csv
-        close_button = QtWidgets.QPushButton("Close", self)#close df
-        
+        add_row_button = QtWidgets.QPushButton("Add Row", self)         #add row to df
+        delete_row_button = QtWidgets.QPushButton("Delete Row", self)   #delete row in df
+        save_to_csv_button = QtWidgets.QPushButton("Save", self)        #save df to csv
+        reset_button = QtWidgets.QPushButton("Reset", self)             #reset df
+
         button_layout.addWidget(add_row_button)
         button_layout.addWidget(delete_row_button)
         button_layout.addWidget(save_to_csv_button)
-        button_layout.addWidget(close_button)
-        
+        button_layout.addWidget(reset_button)
+
         add_row_button.clicked.connect(self.add_row_clicked)
         delete_row_button.clicked.connect(self.delete_row_clicked)
         save_to_csv_button.clicked.connect(self.save_button_clicked)
-        close_button.clicked.connect(self.close_button_clicked)
+        reset_button.clicked.connect(self.reset_button_clicked)
 
         lay.addLayout(button_layout)
         self.setLayout(lay)
@@ -81,6 +80,12 @@ class PandasWidget(QtWidgets.QDialog):
         self.parent.pandas_button.setChecked(False)
         return super().closeEvent(a0)
     
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+    
     def close_button_clicked(self):
         self.hide()
         self.parent.pandas_button.setChecked(False)
@@ -93,49 +98,78 @@ class PandasWidget(QtWidgets.QDialog):
         self.df.to_csv(name)
 
     def add_row_clicked(self):
-        index = self.view.currentIndex()    #access selected cell information
-        row_idx = index.row()   #access row index
-
-        if row_idx == -1:
-            print("Select a Row")
+        """Adds row selected by user.
+        Extracts index of currently selected row, adds a copy of the selected row below,
+        updates the pandas model and displays in GUI window.
+        Displays message if no row selected
+        """
+        index = self.view.currentIndex()        #access cell information from QTableWidget()
+        row_idx = index.row()                   #row index
+        if row_idx == -1:                       #-1 is the default set by Qt if no row selected
+            msg = "No row selected"
+            self.message_box(msg)
         else:
-            new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row posn
-            self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle") #add to whole df
+            new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row
+            self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")
+
             model = pandasModel(self.df)    #update displayed df in window
-            self.view.setModel(model)
-            self.view.selectRow(row_idx)  #select added row
-            print("Row "+str(row_idx)+" added.")
+            self.view.setModel(model)       #update df
+            self.view.selectRow(row_idx)  
+            #self.write_to_file()
 
     def delete_row_clicked(self):
-        index = self.view.currentIndex()    #access selected cell information from QTableWidget()
-        row_idx = index.row()   #access row index
-        print(row_idx)
-        if row_idx == -1:
-            print("Select a Row")
+        """Deletes row selected by user.
+        Extracts index of currently selected row, drops row from df then updates the 
+        pandas model and displays in GUI window.
+        Displays message if no row selected.
+        """
+        index = self.view.currentIndex()    #access cell information from QTableWidget()
+        row_idx = index.row()               #row index
+        if row_idx == -1:                   #-1 is the default set by Qt if no row selected
+            msg = "No row selected"
+            self.message_box(msg)
         else:
-            self.df = self.df.drop([row_idx]) #delete row from df
-            print(self.df.head())
-            self.df = self.df.reset_index(drop=True)#reindex df after deletion
-            print(self.df.head())
-            model = pandasModel(self.df)   #update df
+            self.df = self.df.drop([row_idx])
+            self.df = self.df.reset_index(drop=True)    #reindex df after deletion
+            model = pandasModel(self.df)                #update df
             self.view.setModel(model)
-            print("Row "+str(row_idx)+" deleted.")
-        
-    def center(self):
-        qr = self.frameGeometry()
-        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+            #self.write_to_file(self.filename, self.frame)
+
+    def reset_button_clicked(self):
+        """Reset button callback, calls update_file() from below. Resets the df to a copy of the original df loaded by
+        the user. This copy is generated when the df is loaded for the first time.
+        """
+        self.update_file("test_data.hdf5",1)
+        self.message_box("Changes reverted.")
+
+    def message_box(self, msg_string):
+        """Displays message pop up
+        """
+        msg = QtWidgets.QMessageBox(self)
+        msg.setText(str(msg_string))
+        msg.show()
+
+    def write_to_file(self, filename, frame):
+        self.filename = filename
+        try:
+            #self.df.to_hdf(self.filename,"data",format=None)
+            self.df["frame"] = frame
+            self.df = pd.concat([self.df, self.df.set_index("frame")])
+
+        except Exception as e:
+            self.df = pd.DataFrame()
+            raise PandasViewError(e)
 
     def update_file(self, filename, frame):
         self.filename = filename
         try:
-            df = pd.read_hdf(filename).sort_values("particle")    
-            print(df.head())        
+            df = pd.read_hdf("test_data.hdf5").sort_values("particle")
+            df.to_hdf("data_temp.hdf5", "data", format="Table")
             if 'frame' in df.columns:
-                df2 = df[df.index == frame]    
+                print(df.index)
+                df2 = df[df.index == frame]
             else:
-                df2 = df.reset_index()
+                df2 = df.reset_index(drop=True)
         except Exception as e:
             self.df = pd.DataFrame()
             raise PandasViewError(e)
