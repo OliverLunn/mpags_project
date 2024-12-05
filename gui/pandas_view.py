@@ -29,7 +29,7 @@ class pandasModel(QtCore.QAbstractTableModel):
             if value==str(0):   #deal with zero error
                 value = np.int64(0)
 
-            self._data.iloc[index.row(), index.column()] = value    #set new values
+            self._data.iloc[index.row(), index.column()] = np.float64(value)    #set new values
             return True
         return False
     
@@ -54,17 +54,17 @@ class PandasWidget(QtWidgets.QDialog):
 
         add_row_button = QtWidgets.QPushButton("Add Row", self)         #add row to df
         delete_row_button = QtWidgets.QPushButton("Delete Row", self)   #delete row in df
-        save_to_csv_button = QtWidgets.QPushButton("Save", self)        #save df to csv
+        save_button = QtWidgets.QPushButton("Save", self)        #save df to csv
         reset_button = QtWidgets.QPushButton("Reset", self)             #reset df
 
         button_layout.addWidget(add_row_button)
         button_layout.addWidget(delete_row_button)
-        button_layout.addWidget(save_to_csv_button)
+        button_layout.addWidget(save_button)
         button_layout.addWidget(reset_button)
 
         add_row_button.clicked.connect(self.add_row_clicked)
         delete_row_button.clicked.connect(self.delete_row_clicked)
-        save_to_csv_button.clicked.connect(self.save_button_clicked)
+        save_button.clicked.connect(self.write_to_file)
         reset_button.clicked.connect(self.reset_button_clicked)
 
         lay.addLayout(button_layout)
@@ -110,12 +110,12 @@ class PandasWidget(QtWidgets.QDialog):
             self.message_box(msg)
         else:
             new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row
+            print("row found")
             self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")
 
             model = pandasModel(self.df)    #update displayed df in window
             self.view.setModel(model)       #update df
             self.view.selectRow(row_idx)  
-            #self.write_to_file()
 
     def delete_row_clicked(self):
         """Deletes row selected by user.
@@ -133,29 +133,27 @@ class PandasWidget(QtWidgets.QDialog):
             self.df = self.df.reset_index(drop=True)    #reindex df after deletion
             model = pandasModel(self.df)                #update df
             self.view.setModel(model)
-            #self.write_to_file(self.filename, self.frame)
 
     def reset_button_clicked(self):
         """Reset button callback, calls update_file() from below. Resets the df to a copy of the original df loaded by
         the user. This copy is generated when the df is loaded for the first time.
         """
-        self.update_file("test_data.hdf5",1)
+        self.update_file("test_data.hdf5", 1)
         self.message_box("Changes reverted.")
 
     def message_box(self, msg_string):
-        """Displays message pop up
+        """Displays message pop up. Takes a string as input (desired message)
         """
         msg = QtWidgets.QMessageBox(self)
         msg.setText(str(msg_string))
         msg.show()
 
-    def write_to_file(self, filename, frame):
-        self.filename = filename
+    def write_to_file(self):
+        #self.filename = filename
         try:
-            #self.df.to_hdf(self.filename,"data",format=None)
-            self.df["frame"] = frame
-            self.df = pd.concat([self.df, self.df.set_index("frame")])
-
+            self.df.to_hdf("testdata.hdf5", key="data", mode="w")
+            print(self.df)
+            self.message_box("Dataframe saved.")
         except Exception as e:
             self.df = pd.DataFrame()
             raise PandasViewError(e)
@@ -163,11 +161,12 @@ class PandasWidget(QtWidgets.QDialog):
     def update_file(self, filename, frame):
         self.filename = filename
         try:
-            df = pd.read_hdf("test_data.hdf5").sort_values("particle")
-            df.to_hdf("data_temp.hdf5", "data", format="Table")
+            df = pd.read_hdf("testdata.hdf5")#.sort_values("frame")
+            print(df)
+            df.to_hdf("data_temp.hdf5", "data")
             if 'frame' in df.columns:
-                print(df.index)
-                df2 = df[df.index == frame]
+                df2 = df[df["frame"] == frame]
+                
             else:
                 df2 = df.reset_index(drop=True)
         except Exception as e:
@@ -176,4 +175,3 @@ class PandasWidget(QtWidgets.QDialog):
         self.df=df2
         model = pandasModel(df2)
         self.view.setModel(model)
-

@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
     def __init__(self, *args, movie_filename=None, settings_filename=None, screen_size=None, **kwargs):
         super(MainWindow,self).__init__(*args, **kwargs)
         #input df name
-        self.data_filename = "test_data.hdf5"
+        self.data_filename = "testdata.hdf5"
         #output df name
         self.output_filename = "settings.hdf5"
 
