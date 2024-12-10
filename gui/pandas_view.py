@@ -113,7 +113,6 @@ class PandasWidget(QtWidgets.QDialog):
         else:
             new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row
             self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")
-
             model = pandasModel(self.df)    #update displayed df in window
             self.view.setModel(model)       #update df
             self.view.selectRow(row_idx)
@@ -170,10 +169,11 @@ class PandasWidget(QtWidgets.QDialog):
             if 'frame' in df.columns:
                 df2 = df[df["frame"] == frame]  #index df at frame selected
             else:
-                df2 = df.reset_index(drop=True)
+                df2 = df
         except Exception as e:
             self.df = pd.DataFrame()
             raise PandasViewError(e)
+        
         self.df=df2
         model = pandasModel(df2)    #update Qt model (set df)
         self.view.setModel(model)
