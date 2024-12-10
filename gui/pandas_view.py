@@ -111,11 +111,10 @@ class PandasWidget(QtWidgets.QDialog):
         else:
             new_item = pd.DataFrame(self.df.iloc[[row_idx]])  #df to be added at new row
             self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")
-
             model = pandasModel(self.df)    #update displayed df in window
             self.view.setModel(model)       #update df
             self.view.selectRow(row_idx)  
-            #self.write_to_file()
+            self.write_to_file(self.df, self.filename)
 
     def delete_row_clicked(self):
         """Deletes row selected by user.
@@ -133,7 +132,7 @@ class PandasWidget(QtWidgets.QDialog):
             self.df = self.df.reset_index(drop=True)    #reindex df after deletion
             model = pandasModel(self.df)                #update df
             self.view.setModel(model)
-            #self.write_to_file(self.filename, self.frame)
+            self.write_to_file(self.df, self.filename)
 
     def reset_button_clicked(self):
         """Reset button callback, calls update_file() from below. Resets the df to a copy of the original df loaded by
@@ -149,13 +148,12 @@ class PandasWidget(QtWidgets.QDialog):
         msg.setText(str(msg_string))
         msg.show()
 
-    def write_to_file(self, filename, frame):
+    def write_to_file(self, dataframe, filename):
         self.filename = filename
+        self.df = dataframe
         try:
-            #self.df.to_hdf(self.filename,"data",format=None)
-            self.df["frame"] = frame
-            self.df = pd.concat([self.df, self.df.set_index("frame")])
-
+            self.df.to_hdf("test_data.hdf5", key="data", format="Table")
+            print(self.df.head())
         except Exception as e:
             self.df = pd.DataFrame()
             raise PandasViewError(e)
@@ -163,17 +161,19 @@ class PandasWidget(QtWidgets.QDialog):
     def update_file(self, filename, frame):
         self.filename = filename
         try:
-            df = pd.read_hdf("test_data.hdf5").sort_values("particle")
-            df.to_hdf("data_temp.hdf5", "data", format="Table")
+            df = pd.read_hdf(self.filename).sort_values("particle")
+            #df.to_hdf("data_temp.hdf5", key="data", format="Table")
             if 'frame' in df.columns:
-                print(df.index)
                 df2 = df[df.index == frame]
             else:
-                df2 = df.reset_index(drop=True)
+                df2 = df
         except Exception as e:
             self.df = pd.DataFrame()
             raise PandasViewError(e)
+        
         self.df=df2
+        self.whole_df = df
+        print(np.shape(df2))
         model = pandasModel(df2)
         self.view.setModel(model)
 

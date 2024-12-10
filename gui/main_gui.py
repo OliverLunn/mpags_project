@@ -3,14 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import os
-from os.path import isfile
-from pathlib import Path
 import sys
-from scipy import spatial
-#Our other repos
-from qtwidgets.sliders import QCustomSlider
-from qtwidgets.images import QImageViewer
-from labvision.images import write_img
+
 #This project
 from gui.pandas_view import PandasWidget
 from .file_io import check_filenames, open_movie_dialog, open_settings_dialog, save_settings_dialog
