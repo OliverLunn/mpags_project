@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 import sys, os
-from filehandling import BatchProcess
 from gui.main_gui import MainWindow
 
 def track_gui(movie_filename=None, settings_filename=None):

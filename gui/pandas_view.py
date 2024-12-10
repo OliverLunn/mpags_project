@@ -29,7 +29,7 @@ class pandasModel(QtCore.QAbstractTableModel):
             if value==str(0):   #deal with zero error
                 value = np.int64(0)
 
-            self._data.iloc[index.row(), index.column()] = value    #set new values
+            self._data.iloc[index.row(), index.column()] = np.float64(value)    #set new values
             return True
         return False
     
@@ -54,17 +54,17 @@ class PandasWidget(QtWidgets.QDialog):
 
         add_row_button = QtWidgets.QPushButton("Add Row", self)         #add row to df
         delete_row_button = QtWidgets.QPushButton("Delete Row", self)   #delete row in df
-        save_to_csv_button = QtWidgets.QPushButton("Save", self)        #save df to csv
+        save_button = QtWidgets.QPushButton("Save", self)        #save df to csv
         reset_button = QtWidgets.QPushButton("Reset", self)             #reset df
 
         button_layout.addWidget(add_row_button)
         button_layout.addWidget(delete_row_button)
-        button_layout.addWidget(save_to_csv_button)
+        button_layout.addWidget(save_button)
         button_layout.addWidget(reset_button)
 
         add_row_button.clicked.connect(self.add_row_clicked)
         delete_row_button.clicked.connect(self.delete_row_clicked)
-        save_to_csv_button.clicked.connect(self.save_button_clicked)
+        save_button.clicked.connect(self.save_button_clicked)
         reset_button.clicked.connect(self.reset_button_clicked)
 
         lay.addLayout(button_layout)
@@ -75,27 +75,23 @@ class PandasWidget(QtWidgets.QDialog):
         h = int(self.parent.screen_size.height() / 1.5)
         self.resize(w, h)
         self.move(int(0.975*w),int(h/5))
-        
-    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
-        self.parent.pandas_button.setChecked(False)
-        return super().closeEvent(a0)
-    
+
     def center(self):
         qr = self.frameGeometry()
         cp = QtWidgets.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
-    
-    def close_button_clicked(self):
-        self.hide()
+
+    def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.parent.pandas_button.setChecked(False)
+        return super().closeEvent(a0)
         
     def save_button_clicked(self):
-        options = QtWidgets.QFileDialog.Options()
-        directory = os.path.split(self.filename)[0]
-        name, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to csv", directory, "csv (*.csv)")
-        name = name.split('.')[0]+'.csv'
-        self.df.to_csv(name)
+        """Saves df to .hdf5 manually when save button clicked and displays message.
+        Calls write_to_file().
+        """
+        self.write_to_file()
+        self.message_box("Dataframe saved.")
 
     def add_row_clicked(self):
         """Adds row selected by user.
@@ -113,13 +109,13 @@ class PandasWidget(QtWidgets.QDialog):
             self.df = pd.concat([self.df, new_item], ignore_index=True).sort_values("particle")
             model = pandasModel(self.df)    #update displayed df in window
             self.view.setModel(model)       #update df
-            self.view.selectRow(row_idx)  
-            self.write_to_file(self.df, self.filename)
+            self.view.selectRow(row_idx)
+            self.write_to_file()
 
     def delete_row_clicked(self):
         """Deletes row selected by user.
-        Extracts index of currently selected row, drops row from df then updates the 
-        pandas model and displays in GUI window.
+        Extracts index of currently selected row, drops row from df, updates the 
+        pandas model and displays df in GUI window.
         Displays message if no row selected.
         """
         index = self.view.currentIndex()    #access cell information from QTableWidget()
@@ -132,39 +128,47 @@ class PandasWidget(QtWidgets.QDialog):
             self.df = self.df.reset_index(drop=True)    #reindex df after deletion
             model = pandasModel(self.df)                #update df
             self.view.setModel(model)
-            self.write_to_file(self.df, self.filename)
+            self.write_to_file()
 
     def reset_button_clicked(self):
         """Reset button callback, calls update_file() from below. Resets the df to a copy of the original df loaded by
         the user. This copy is generated when the df is loaded for the first time.
         """
-        self.update_file("test_data.hdf5",1)
+        self.update_file("data_temp.hdf5", 1)
         self.message_box("Changes reverted.")
 
     def message_box(self, msg_string):
-        """Displays message pop up
+        """Displays message pop up. Takes a string as input (desired message)
         """
         msg = QtWidgets.QMessageBox(self)
         msg.setText(str(msg_string))
         msg.show()
 
-    def write_to_file(self, dataframe, filename):
-        self.filename = filename
-        self.df = dataframe
+    def write_to_file(self):
+        """Writes dataframe in window to a .hdf5 file. 
+        """
+        #self.filename = filename
         try:
-            self.df.to_hdf("test_data.hdf5", key="data", format="Table")
-            print(self.df.head())
+            self.df.to_hdf("testdata.hdf5", key="data", mode="w")
         except Exception as e:
             self.df = pd.DataFrame()
             raise PandasViewError(e)
 
     def update_file(self, filename, frame):
+        """Reads in df from .hdf5 file, sorts the df based on particle number.
+        Saves a copy as a temp file (still .hdf5). Selects section of df corresponding
+        to selected frame number. Defines the model to be used by the QtCore.QAbstractTableModel() 
+        class in the GUI window.        
+        """
         self.filename = filename
         try:
-            df = pd.read_hdf(self.filename).sort_values("particle")
-            #df.to_hdf("data_temp.hdf5", key="data", format="Table")
+            df = pd.read_hdf(filename).sort_values("particle")
+
+            if os.path.exists("data_temp.hdf5")==False:
+                df.to_hdf("data_temp.hdf5", key="data", mode="w") #save df to temporary file
+            
             if 'frame' in df.columns:
-                df2 = df[df.index == frame]
+                df2 = df[df["frame"] == frame]  #index df at frame selected
             else:
                 df2 = df
         except Exception as e:
@@ -172,8 +176,5 @@ class PandasWidget(QtWidgets.QDialog):
             raise PandasViewError(e)
         
         self.df=df2
-        self.whole_df = df
-        print(np.shape(df2))
-        model = pandasModel(df2)
+        model = pandasModel(df2)    #update Qt model (set df)
         self.view.setModel(model)
-
