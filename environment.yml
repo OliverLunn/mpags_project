@@ -1,0 +1,15 @@
+name: shaker
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pyqt
+  - matplotlib
+  - pandas
+  - scikit-learn
+  - ipympl
+  - numpy
+  - scipy
+  - pytest
+  - conda-forge::moviepy
+prefix: C:\Users\ppzmis\AppData\Local\miniconda3\envs\shaker

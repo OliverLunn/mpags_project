@@ -25,11 +25,10 @@ class pandasModel(QtCore.QAbstractTableModel):
     
     def setData(self, index, value, role):
         if role == Qt.EditRole:#set role to edit
-            
             if value==str(0):   #deal with zero error
-                value = np.int64(0)
-
+                value = np.float64(0)
             self._data.iloc[index.row(), index.column()] = np.float64(value)    #set new values
+
             return True
         return False
     
@@ -81,6 +80,13 @@ class PandasWidget(QtWidgets.QDialog):
         cp = QtWidgets.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
+    def message_box(self, msg_string):
+        """Displays message pop up. Takes a string as input (desired message)
+        """
+        msg = QtWidgets.QMessageBox(self)
+        msg.setText(str(msg_string))
+        msg.show()
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         self.parent.pandas_button.setChecked(False)
@@ -137,14 +143,7 @@ class PandasWidget(QtWidgets.QDialog):
         """
         self.update_file("data_temp.hdf5", 1)
         self.message_box("Changes reverted.")
-
-    def message_box(self, msg_string):
-        """Displays message pop up. Takes a string as input (desired message)
-        """
-        msg = QtWidgets.QMessageBox(self)
-        msg.setText(str(msg_string))
-        msg.show()
-
+    
     def write_to_file(self):
         """Writes dataframe in window to a .hdf5 file. 
         """
@@ -165,7 +164,7 @@ class PandasWidget(QtWidgets.QDialog):
         try:
             df = pd.read_hdf(filename).sort_values("particle")
 
-            if os.path.exists("data_temp.hdf5")==False:
+            if os.path.exists("data_temp.hdf5") == False:
                 df.to_hdf("data_temp.hdf5", key="data", mode="w") #save df to temporary file
             
             if 'frame' in df.columns:
